@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API TABELA FIPE - FATEC CAMPINAS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #00e1ff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #0077ff;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #0059ff;
+            border-radius: 8px;
+            background: #000000;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #1100fa;
+            box-shadow: 0 0 5px rgba(31, 11, 121, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0051ff;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1100ff;
+        }
+
+        .result {
+            margin-top: 20px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .result h2 {
+            font-size: 16px;
+            color: #2e00fc;
+        }
+
+        .result p {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Consulta de Veículos</h1>
+        <label for="tipo_veiculo">Tipo de Veículo:</label>
+        <select id="tipo_veiculo">
+            <option value="carros">Carros</option>
+            <option value="motos">Motos</option>
+            <option value="caminhoes">Caminhões</option>
+        </select>
+        <label for="marca">Marca:</label>
+        <select id="marca">
+            <option value="">Selecione uma marca</option>
+        </select>
+        <label for="modelo">Modelo:</label>
+        <select id="modelo">
+            <option value="">Selecione um modelo</option>
+        </select>
+
+        <label for="ano">Ano:</label>
+        <select id="ano">
+            <option value="">Selecione um ano</option>
+        </select>
+
+        <button id="buscar">Buscar Veículo</button>
+
+        <div id="resultado" class="result" style="display: none;">
+            <h2>Detalhes do Veículo:</h2>
+            <p id="detalhes"></p> 
+        </div>
+    </div>
+
+    <script>
+        const tipoVeiculoSelect = document.getElementById("tipo_veiculo");
+        const marcaSelect = document.getElementById("marca");
+        const modeloSelect = document.getElementById("modelo");
+        const anoSelect = document.getElementById("ano");
+        const buscarBtn = document.getElementById("buscar");
+        const resultadoDiv = document.getElementById("resultado");
+        const detalhesP = document.getElementById("detalhes");
+
+        function carregarMarcas(tipoVeiculo) {
+            fetch(`http://127.0.0.1:5000/marcas/${tipoVeiculo}`)
+                .then(response => response.json())
+                .then(data => {
+                    marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
+                    modeloSelect.innerHTML = '<option value="">Selecione um modelo</option>';
+                    anoSelect.innerHTML = '<option value="">Selecione um ano</option>';
+                    data.forEach(marca => {
+                        const option = document.createElement("option");
+                        option.value = marca.codigo;
+                        option.text = marca.nome;
+                        marcaSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error("Erro ao carregar marcas:", error));
+        }
+
+        function carregarModelos(tipoVeiculo, idMarca) {
+            fetch(`http://127.0.0.1:5000/modelos/${tipoVeiculo}/${idMarca}`)
+                .then(response => response.json())
+                .then(data => {
+                    modeloSelect.innerHTML = '<option value="">Selecione um modelo</option>';
+                    anoSelect.innerHTML = '<option value="">Selecione um ano</option>';
+                    data.modelos.forEach(modelo => {
+                        const option = document.createElement("option");
+                        option.value = modelo.codigo;
+                        option.text = modelo.nome;
+                        modeloSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error("Erro ao carregar modelos:", error));
+        }
+
+        function carregarAnos(tipoVeiculo, idMarca, idModelo) {
+            fetch(`http://127.0.0.1:5000/anos/${tipoVeiculo}/${idMarca}/${idModelo}`)
+                .then(response => response.json())
+                .then(data => {
+                    anoSelect.innerHTML = '<option value="">Selecione um ano</option>';
+                    data.forEach(ano => {
+                        const option = document.createElement("option");
+                        option.value = ano.codigo;
+                        option.text = ano.nome;
+                        anoSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error("Erro ao carregar anos:", error));
+        }
+
+        function buscarVeiculo(tipoVeiculo, idMarca, idModelo, ano) {
+    fetch(`http://127.0.0.1:5000/preco/${tipoVeiculo}/${idMarca}/${idModelo}/${ano}`)
+        .then(response => response.json())
+        .then(data => {
+            resultadoDiv.style.display = "block";
+            console.log("Resposta da API:", data); 
+            detalhesP.innerHTML = `
+                <strong>Detalhes do Veículo:</strong><br>
+                <ul>
+                    <li><strong>Tipo de Veículo:</strong> ${data.TipoVeiculo === 1 ? "Carro" : "Outro"}</li>
+                    <li><strong>Valor:</strong> ${data.Valor || "N/A"}</li>
+                    <li><strong>Marca:</strong> ${data.Marca || "N/A"}</li>
+                    <li><strong>Modelo:</strong> ${data.Modelo || "N/A"}</li>
+                    <li><strong>Ano do Modelo:</strong> ${data.AnoModelo || "N/A"}</li>
+                    <li><strong>Combustível:</strong> ${data.Combustivel || "N/A"}</li>
+                    <li><strong>Código FIPE:</strong> ${data.CodigoFipe || "N/A"}</li>
+                    <li><strong>Mês de Referência:</strong> ${data.MesReferencia || "N/A"}</li>
+                    <li><strong>Sigla do Combustível:</strong> ${data.SiglaCombustivel || "N/A"}</li>
+                </ul>
+            `;
+        })
+        .catch(error => {
+            console.error("Erro ao buscar veículo:", error);
+            alert("Erro ao buscar informações do veículo. Por favor, tente novamente.");
+        });
+}
+
+        tipoVeiculoSelect.addEventListener("change", () => carregarMarcas(tipoVeiculoSelect.value));
+        marcaSelect.addEventListener("change", () => carregarModelos(tipoVeiculoSelect.value, marcaSelect.value));
+        modeloSelect.addEventListener("change", () => carregarAnos(tipoVeiculoSelect.value, marcaSelect.value, modeloSelect.value));
+
+        buscarBtn.addEventListener("click", () => {
+            const tipoVeiculo = tipoVeiculoSelect.value;
+            const idMarca = marcaSelect.value;
+            const idModelo = modeloSelect.value;
+            const ano = anoSelect.value;
+
+            if (tipoVeiculo && idMarca && idModelo && ano) {
+                buscarVeiculo(tipoVeiculo, idMarca, idModelo, ano);
+            } else {
+                alert("Por favor, selecione todas as opções.");
+            }
+        });
+        window.onload = () => carregarMarcas(tipoVeiculoSelect.value);
+    </script>
+</body>
+</html>
